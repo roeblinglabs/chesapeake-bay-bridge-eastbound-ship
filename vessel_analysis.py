@@ -1,357 +1,668 @@
-"""
-Chesapeake Bay Bridge Eastbound - Vessel Allision Analysis Module
-Analyzes vessel traffic and collision risks for the Chesapeake Bay Bridge (Eastbound span)
-"""
-
 import math
-from datetime import datetime
 
-# Chesapeake Bay Bridge Eastbound coordinates
+# Chesapeake Bay Bridge Eastbound location
 BRIDGE_LAT = 38.99334868251498
 BRIDGE_LON = -76.38219400260512
 
-# Pier locations for the Chesapeake Bay Bridge Eastbound
+# Chesapeake Bay Bridge Eastbound piers
 CHESAPEAKE_BAY_BRIDGE_EASTBOUND_PIERS = {
-    'Pier 1': {
+    'pier_1': {
+        'name': 'Pier 1',
         'lat': 39.006685786202446,
         'lon': -76.4030718781911,
+        'lateral_capacity_kips': 5000,
         'water_depth_ft': 25
     },
-    'Pier 2': {
+    'pier_2': {
+        'name': 'Pier 2',
         'lat': 39.0047100341694,
         'lon': -76.40187242168875,
+        'lateral_capacity_kips': 5000,
         'water_depth_ft': 30
     },
-    'Pier 3': {
+    'pier_3': {
+        'name': 'Pier 3',
         'lat': 39.000576682498846,
         'lon': -76.39931260304236,
+        'lateral_capacity_kips': 5000,
         'water_depth_ft': 35
     },
-    'Pier 4': {
+    'pier_4': {
+        'name': 'Pier 4',
         'lat': 38.99934618768639,
         'lon': -76.3984344824108,
+        'lateral_capacity_kips': 5000,
         'water_depth_ft': 40
     },
-    'Pier 5': {
+    'pier_5': {
+        'name': 'Pier 5',
         'lat': 38.996661450758054,
         'lon': -76.39490712081833,
+        'lateral_capacity_kips': 5000,
         'water_depth_ft': 45
     },
-    'Pier 6': {
+    'pier_6': {
+        'name': 'Pier 6',
         'lat': 38.99589831874505,
         'lon': -76.39300195801506,
+        'lateral_capacity_kips': 5000,
         'water_depth_ft': 50
     },
-    'Pier 7 (Anchorage)': {
+    'pier_7_anchorage': {
+        'name': 'Pier 7 (Anchorage)',
         'lat': 38.994722737169305,
         'lon': -76.38834446411663,
+        'lateral_capacity_kips': 5000,
         'water_depth_ft': 55
     },
-    'Pier 8': {
+    'pier_8': {
+        'name': 'Pier 8',
         'lat': 38.994486462598395,
         'lon': -76.38712588978133,
+        'lateral_capacity_kips': 5000,
         'water_depth_ft': 60
     },
-    'Pier 9 (Tower)': {
+    'pier_9_tower': {
+        'name': 'Pier 9 (Tower)',
         'lat': 38.993873926517374,
         'lon': -76.38489943454631,
+        'lateral_capacity_kips': 5000,
         'water_depth_ft': 100
     },
-    'Pier 10 (Tower)': {
+    'pier_10_tower': {
+        'name': 'Pier 10 (Tower)',
         'lat': 38.99258665186238,
         'lon': -76.37951868887593,
+        'lateral_capacity_kips': 5000,
         'water_depth_ft': 100
     },
-    'Pier 11': {
+    'pier_11': {
+        'name': 'Pier 11',
         'lat': 38.992082059562,
         'lon': -76.37728342385851,
+        'lateral_capacity_kips': 5000,
         'water_depth_ft': 60
     },
-    'Pier 12 (Anchorage)': {
+    'pier_12_anchorage': {
+        'name': 'Pier 12 (Anchorage)',
         'lat': 38.99169243968722,
         'lon': -76.3757818114165,
+        'lateral_capacity_kips': 5000,
         'water_depth_ft': 55
     },
-    'Pier 13': {
+    'pier_13': {
+        'name': 'Pier 13',
         'lat': 38.991308218724654,
         'lon': -76.37390965718366,
+        'lateral_capacity_kips': 5000,
         'water_depth_ft': 50
     },
-    'Pier 14': {
+    'pier_14': {
+        'name': 'Pier 14',
         'lat': 38.990858413902934,
         'lon': -76.3718974636084,
+        'lateral_capacity_kips': 5000,
         'water_depth_ft': 45
     },
-    'Pier 15': {
+    'pier_15': {
+        'name': 'Pier 15',
         'lat': 38.990462929792685,
         'lon': -76.37027880005854,
+        'lateral_capacity_kips': 5000,
         'water_depth_ft': 40
     },
-    'Pier 16': {
+    'pier_16': {
+        'name': 'Pier 16',
         'lat': 38.99001516265438,
         'lon': -76.36827088727092,
+        'lateral_capacity_kips': 5000,
         'water_depth_ft': 35
     },
-    'Pier 17': {
+    'pier_17': {
+        'name': 'Pier 17',
         'lat': 38.989649864735526,
         'lon': -76.36661155933896,
+        'lateral_capacity_kips': 5000,
         'water_depth_ft': 30
     },
-    'Pier 18': {
+    'pier_18': {
+        'name': 'Pier 18',
         'lat': 38.988335645418,
         'lon': -76.36151863357634,
+        'lateral_capacity_kips': 5000,
         'water_depth_ft': 25
     },
-    'Pier 19': {
+    'pier_19': {
+        'name': 'Pier 19',
         'lat': 38.98694086994944,
         'lon': -76.35556555408714,
+        'lateral_capacity_kips': 5000,
         'water_depth_ft': 20
     },
-    'Pier 20': {
+    'pier_20': {
+        'name': 'Pier 20',
         'lat': 38.98465161655931,
         'lon': -76.34570149047524,
+        'lateral_capacity_kips': 5000,
         'water_depth_ft': 15
     }
 }
 
+def estimate_dwt_from_ais(ship_type, length, width):
+    """Estimate vessel DWT based on AIS data"""
+    if length is None or length == 0:
+        if "CARGO" in str(ship_type).upper() or "CONTAINER" in str(ship_type).upper():
+            return 15000
+        elif "TANKER" in str(ship_type).upper():
+            return 20000
+        elif "PASSENGER" in str(ship_type).upper() or "FERRY" in str(ship_type).upper():
+            return 1000
+        else:
+            return 5000
 
-def haversine_distance(lat1, lon1, lat2, lon2):
-    """Calculate distance between two points in nautical miles"""
-    R = 3440.065  # Earth's radius in nautical miles
+    if length > 250:
+        return 50000
+    elif length > 150:
+        return 20000
+    elif length > 100:
+        return 10000
+    elif length > 50:
+        return 3000
+    else:
+        return 1000
 
-    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
-    dlat = lat2 - lat1
-    dlon = lon2 - lon1
+def estimate_vessel_draft(dwt_tons, ship_type):
+    """Estimate vessel draft based on DWT"""
+    if dwt_tons > 50000:
+        return 45
+    elif dwt_tons > 20000:
+        return 35
+    elif dwt_tons > 10000:
+        return 28
+    elif dwt_tons > 5000:
+        return 22
+    elif dwt_tons > 1000:
+        return 15
+    else:
+        return 10
 
-    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+def check_grounding_risk(vessel_draft_ft, water_depth_ft):
+    """
+    Two-category grounding assessment:
+    1. WILL GROUND - clearance deficit > 10 ft
+    2. POTENTIAL THREAT - vessel could reach pier
+
+    Returns:
+        will_ground: Boolean
+        clearance: Under-keel clearance (feet)
+    """
+    clearance = water_depth_ft - vessel_draft_ft
+    GROUNDING_THRESHOLD = -10  # feet deficit
+    will_ground = (clearance < GROUNDING_THRESHOLD)
+    return will_ground, clearance
+
+def calculate_impact_force_aashto(dwt_long_tons, speed_knots):
+    """AASHTO simplified formula: P = (V² × DWT × C) / (2g)"""
+    speed_fps = speed_knots * 1.688
+    C = 1.2
+    g = 32.2
+    force_kips = (speed_fps**2 * dwt_long_tons * C) / (2 * g)
+    return force_kips
+
+def calculate_dc_ratio(impact_force_kips, pier_capacity_kips):
+    """Calculate Demand/Capacity ratio"""
+    if pier_capacity_kips == 0:
+        return 0
+    return impact_force_kips / pier_capacity_kips
+
+def assess_threat_level(dc_ratio):
+    """Assess threat based on D/C ratio"""
+    if dc_ratio >= 1.0:
+        return "CRITICAL", "🔴", "Impact exceeds lateral pier capacity"
+    elif dc_ratio >= 0.75:
+        return "WARNING", "🟠", "Impact approaching lateral capacity"
+    elif dc_ratio >= 0.50:
+        return "WATCH", "🟡", "Significant lateral impact force"
+    else:
+        return "NORMAL", "🟢", "Impact within safe limits"
+
+def calculate_distance(lat1, lon1, lat2, lon2):
+    """Haversine formula - distance in nautical miles"""
+    lat1_rad = math.radians(lat1)
+    lon1_rad = math.radians(lon1)
+    lat2_rad = math.radians(lat2)
+    lon2_rad = math.radians(lon2)
+
+    dlat = lat2_rad - lat1_rad
+    dlon = lon2_rad - lon1_rad
+
+    a = math.sin(dlat/2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon/2)**2
     c = 2 * math.asin(math.sqrt(a))
 
-    return R * c
+    radius_nm = 3440.065
+    distance = radius_nm * c
+    return distance
 
-
-def calculate_bearing(lat1, lon1, lat2, lon2):
-    """Calculate bearing from point 1 to point 2"""
-    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
-
-    dlon = lon2 - lon1
-    x = math.sin(dlon) * math.cos(lat2)
-    y = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dlon)
-
-    bearing = math.atan2(x, y)
-    bearing = math.degrees(bearing)
-    bearing = (bearing + 360) % 360
-
-    return bearing
-
-
-def estimate_vessel_mass(ship_type, length_m):
-    """Estimate vessel displacement in metric tons based on type and length"""
-    if length_m is None or length_m <= 0:
-        length_m = 50  # Default assumption
-
-    ship_type_lower = str(ship_type).lower() if ship_type else ''
-
-    # Mass estimation based on vessel type and length
-    if 'tanker' in ship_type_lower or 'crude' in ship_type_lower:
-        return 0.5 * length_m ** 2.5
-    elif 'container' in ship_type_lower or 'cargo' in ship_type_lower:
-        return 0.4 * length_m ** 2.4
-    elif 'bulk' in ship_type_lower:
-        return 0.45 * length_m ** 2.45
-    elif 'passenger' in ship_type_lower or 'cruise' in ship_type_lower:
-        return 0.25 * length_m ** 2.3
-    elif 'tug' in ship_type_lower:
-        return 0.6 * length_m ** 2.2
-    elif 'fishing' in ship_type_lower:
-        return 0.3 * length_m ** 2.1
-    else:
-        return 0.35 * length_m ** 2.3
-
-
-def calculate_aashto_impact_force(vessel_mass_tonnes, velocity_knots):
-    """
-    Calculate vessel impact force using AASHTO methodology
-    Returns force in MN (meganewtons)
-    """
-    # Convert units
-    mass_kg = vessel_mass_tonnes * 1000
-    velocity_ms = velocity_knots * 0.5144  # knots to m/s
-
-    # Kinetic energy
-    KE = 0.5 * mass_kg * velocity_ms ** 2
-
-    # AASHTO impact force estimation (simplified)
-    # Based on deformation energy absorption
-    deformation_distance = 1.5  # meters (assumed crush depth)
-    impact_force = KE / deformation_distance
-
-    # Convert to MN
-    impact_force_MN = impact_force / 1e6
-
-    return impact_force_MN
-
-
-def get_vessel_length(dimension_data):
-    """Extract vessel length from AIS dimension data"""
-    if isinstance(dimension_data, dict):
-        a = dimension_data.get('A', 0) or 0
-        b = dimension_data.get('B', 0) or 0
-        length = a + b
-        if length > 0:
-            return length
-    return None
-
-
-def analyze_vessel_threat(vessel, piers=None):
-    """
-    Analyze threat level of a vessel to bridge piers
-    Returns threat analysis dict
-    """
-    if piers is None:
-        piers = CHESAPEAKE_BAY_BRIDGE_EASTBOUND_PIERS
-
-    lat = vessel.get('Latitude')
-    lon = vessel.get('Longitude')
-    sog = vessel.get('Sog', 0) or 0
-    cog = vessel.get('Cog', 0) or 0
-    ship_type = vessel.get('ShipType', 'Unknown')
-    dimension = vessel.get('Dimension', {})
-
-    if lat is None or lon is None:
-        return None
-
-    # Get vessel length and estimate mass
-    length_m = get_vessel_length(dimension)
-    mass_tonnes = estimate_vessel_mass(ship_type, length_m)
-
-    # Find closest pier
+def find_closest_pier(lat, lon):
+    """Determine which pier is closest to vessel"""
     min_distance = float('inf')
     closest_pier = None
 
-    for pier_name, pier_data in piers.items():
-        dist = haversine_distance(lat, lon, pier_data['lat'], pier_data['lon'])
-        if dist < min_distance:
-            min_distance = dist
-            closest_pier = pier_name
+    for pier_id, pier_data in CHESAPEAKE_BAY_BRIDGE_EASTBOUND_PIERS.items():
+        distance = calculate_distance(lat, lon, pier_data['lat'], pier_data['lon'])
+        if distance < min_distance:
+            min_distance = distance
+            closest_pier = pier_id
 
-    # Calculate bearing to closest pier
-    pier_data = piers[closest_pier]
-    bearing_to_pier = calculate_bearing(lat, lon, pier_data['lat'], pier_data['lon'])
+    return closest_pier, min_distance
 
-    # Check if vessel is heading toward pier (within 30 degrees)
-    bearing_diff = abs(cog - bearing_to_pier)
-    if bearing_diff > 180:
-        bearing_diff = 360 - bearing_diff
+def analyze_vessel(ship_data):
+    """Complete vessel analysis"""
+    lat = ship_data.get('Latitude')
+    lon = ship_data.get('Longitude')
+    speed = ship_data.get('Sog', 0)
+    ship_type = ship_data.get('ShipType', 'Unknown')
 
-    is_approaching = bearing_diff < 30
+    dims = ship_data.get('Dimension', {})
+    length = dims.get('A', 0) + dims.get('B', 0) if dims else 0
+    width = dims.get('C', 0) + dims.get('D', 0) if dims else 0
 
-    # Calculate potential impact force
-    impact_force = calculate_aashto_impact_force(mass_tonnes, sog)
+    closest_pier_id, distance_to_pier = find_closest_pier(lat, lon)
+    pier = CHESAPEAKE_BAY_BRIDGE_EASTBOUND_PIERS[closest_pier_id]
+    distance_from_bridge = calculate_distance(lat, lon, BRIDGE_LAT, BRIDGE_LON)
 
-    # Time to closest point (simplified)
-    if sog > 0:
-        time_to_pier_hours = min_distance / sog
-        time_to_pier_minutes = time_to_pier_hours * 60
+    dwt = estimate_dwt_from_ais(ship_type, length, width)
+    draft = estimate_vessel_draft(dwt, ship_type)
+    will_ground, ukc = check_grounding_risk(draft, pier['water_depth_ft'])
+
+    if will_ground:
+        impact_force = 0
+        dc_ratio = 0
+        status = "GROUNDED"
+        emoji = "⚓"
+        description = f"Vessel will ground before pier (UKC deficit: {abs(ukc):.1f} ft)"
     else:
-        time_to_pier_minutes = float('inf')
+        impact_force = calculate_impact_force_aashto(dwt, speed)
+        dc_ratio = calculate_dc_ratio(impact_force, pier['lateral_capacity_kips'])
+        status, emoji, description = assess_threat_level(dc_ratio)
 
-    # Threat level assessment
-    threat_level = 'LOW'
-    threat_score = 0
-
-    # Distance factor
-    if min_distance < 0.5:  # Less than 0.5 nm
-        threat_score += 40
-    elif min_distance < 1.0:
-        threat_score += 25
-    elif min_distance < 2.0:
-        threat_score += 10
-
-    # Speed factor
-    if sog > 12:
-        threat_score += 30
-    elif sog > 8:
-        threat_score += 20
-    elif sog > 4:
-        threat_score += 10
-
-    # Heading factor
-    if is_approaching:
-        threat_score += 20
-
-    # Mass/size factor
-    if mass_tonnes > 50000:
-        threat_score += 10
-    elif mass_tonnes > 10000:
-        threat_score += 5
-
-    if threat_score >= 60:
-        threat_level = 'CRITICAL'
-    elif threat_score >= 40:
-        threat_level = 'HIGH'
-    elif threat_score >= 20:
-        threat_level = 'MEDIUM'
+        if ukc < 5:
+            description += f" | Marginal clearance (UKC: {ukc:+.1f} ft)"
 
     return {
-        'vessel_name': vessel.get('name', 'Unknown'),
-        'mmsi': vessel.get('mmsi', 'N/A'),
-        'ship_type': ship_type,
-        'length_m': length_m,
-        'mass_tonnes': mass_tonnes,
-        'speed_knots': sog,
-        'course': cog,
-        'closest_pier': closest_pier,
-        'distance_nm': min_distance,
-        'bearing_to_pier': bearing_to_pier,
-        'is_approaching': is_approaching,
-        'time_to_pier_min': time_to_pier_minutes,
-        'impact_force_MN': impact_force,
-        'threat_level': threat_level,
-        'threat_score': threat_score
+        'closest_pier_id': closest_pier_id,
+        'pier_name': pier['name'],
+        'distance_to_pier_nm': distance_to_pier,
+        'distance_from_bridge_nm': distance_from_bridge,
+        'dwt_tons': dwt,
+        'vessel_draft_ft': draft,
+        'water_depth_ft': pier['water_depth_ft'],
+        'ukc_ft': ukc,
+        'will_ground': will_ground,
+        'impact_force_kips': impact_force,
+        'pier_lateral_capacity_kips': pier['lateral_capacity_kips'],
+        'dc_ratio': dc_ratio,
+        'status': status,
+        'emoji': emoji,
+        'description': description
     }
 
+def predict_position(lat, lon, speed_knots, course_degrees, time_minutes):
+    """
+    Predict vessel position after given time
 
-def analyze_all_vessels(vessels_data):
-    """Analyze all vessels and return sorted by threat level"""
-    analyses = []
+    Args:
+        lat: Current latitude (degrees)
+        lon: Current longitude (degrees)
+        speed_knots: Vessel speed (knots)
+        course_degrees: Vessel course (degrees, 0-360)
+        time_minutes: Time ahead to predict (minutes)
 
-    for vessel in vessels_data:
-        analysis = analyze_vessel_threat(vessel)
-        if analysis:
-            analyses.append(analysis)
+    Returns:
+        predicted_lat, predicted_lon: Future position
+    """
+    # Convert to radians
+    lat_rad = math.radians(lat)
+    lon_rad = math.radians(lon)
+    course_rad = math.radians(course_degrees)
 
-    # Sort by threat score (highest first)
-    analyses.sort(key=lambda x: x['threat_score'], reverse=True)
+    # Distance traveled in nautical miles
+    distance_nm = speed_knots * (time_minutes / 60.0)
 
-    return analyses
+    # Earth radius in nautical miles
+    earth_radius_nm = 3440.065
 
+    # Calculate new position using spherical trigonometry
+    d_over_r = distance_nm / earth_radius_nm
 
-def get_threat_summary(analyses):
-    """Generate summary statistics of vessel threats"""
-    if not analyses:
-        return {
-            'total_vessels': 0,
-            'critical': 0,
-            'high': 0,
-            'medium': 0,
-            'low': 0,
-            'approaching_count': 0,
-            'max_impact_force': 0
-        }
+    new_lat_rad = math.asin(
+        math.sin(lat_rad) * math.cos(d_over_r) +
+        math.cos(lat_rad) * math.sin(d_over_r) * math.cos(course_rad)
+    )
 
-    critical = sum(1 for a in analyses if a['threat_level'] == 'CRITICAL')
-    high = sum(1 for a in analyses if a['threat_level'] == 'HIGH')
-    medium = sum(1 for a in analyses if a['threat_level'] == 'MEDIUM')
-    low = sum(1 for a in analyses if a['threat_level'] == 'LOW')
-    approaching = sum(1 for a in analyses if a['is_approaching'])
-    max_force = max(a['impact_force_MN'] for a in analyses)
+    new_lon_rad = lon_rad + math.atan2(
+        math.sin(course_rad) * math.sin(d_over_r) * math.cos(lat_rad),
+        math.cos(d_over_r) - math.sin(lat_rad) * math.sin(new_lat_rad)
+    )
+
+    # Convert back to degrees
+    new_lat = math.degrees(new_lat_rad)
+    new_lon = math.degrees(new_lon_rad)
+
+    return new_lat, new_lon
+
+def calculate_closest_point_of_approach(ship_lat, ship_lon, speed_knots, course_degrees,
+                                       target_lat, target_lon):
+    """
+    Calculate closest point of approach (CPA) to a target
+
+    Args:
+        ship_lat, ship_lon: Current vessel position
+        speed_knots: Vessel speed
+        course_degrees: Vessel course
+        target_lat, target_lon: Target position (pier)
+
+    Returns:
+        cpa_distance_nm: Closest approach distance (nautical miles)
+        cpa_time_minutes: Time until CPA (minutes)
+        will_approach: Boolean - is vessel getting closer?
+    """
+    # If ship is stationary, CPA is current distance
+    if speed_knots < 0.5:
+        current_distance = calculate_distance(ship_lat, ship_lon, target_lat, target_lon)
+        return current_distance, 0, False
+
+    # Calculate positions at future time intervals
+    current_distance = calculate_distance(ship_lat, ship_lon, target_lat, target_lon)
+    min_distance = current_distance
+    min_distance_time = 0
+
+    # Check distances at 1-minute intervals for next 60 minutes
+    for t in range(1, 61):
+        future_lat, future_lon = predict_position(ship_lat, ship_lon, speed_knots,
+                                                   course_degrees, t)
+        future_distance = calculate_distance(future_lat, future_lon, target_lat, target_lon)
+
+        if future_distance < min_distance:
+            min_distance = future_distance
+            min_distance_time = t
+
+        # If distance starts increasing after decreasing, we've passed CPA
+        if t > min_distance_time + 5 and future_distance > min_distance:
+            break
+
+    # Vessel is approaching if CPA is in the future and closer than current position
+    will_approach = (min_distance < current_distance) and (min_distance_time > 0)
+
+    return min_distance, min_distance_time, will_approach
+
+def predict_trajectory(ship_data, prediction_times=[5, 10, 15]):
+    """
+    Predict vessel trajectory at multiple time intervals
+
+    Args:
+        ship_data: Dictionary with current vessel data
+        prediction_times: List of future times in minutes
+
+    Returns:
+        trajectory: List of predicted positions with analysis
+    """
+    lat = ship_data.get('Latitude')
+    lon = ship_data.get('Longitude')
+    speed = ship_data.get('Sog', 0)
+    course = ship_data.get('Cog', 0)
+
+    trajectory = []
+
+    for t in prediction_times:
+        pred_lat, pred_lon = predict_position(lat, lon, speed, course, t)
+
+        # Calculate distance to bridge at predicted position
+        distance_to_bridge = calculate_distance(pred_lat, pred_lon, BRIDGE_LAT, BRIDGE_LON)
+
+        trajectory.append({
+            'time_minutes': t,
+            'latitude': pred_lat,
+            'longitude': pred_lon,
+            'distance_to_bridge_nm': distance_to_bridge
+        })
+
+    return trajectory
+
+def assess_collision_risk(ship_data, analysis):
+    """
+    Assess collision risk based on trajectory, speed, distance, and impact force
+
+    Args:
+        ship_data: Vessel AIS data
+        analysis: Existing vessel analysis with D/C ratio
+
+    Returns:
+        collision_assessment: Dictionary with risk details
+    """
+    lat = ship_data.get('Latitude')
+    lon = ship_data.get('Longitude')
+    speed = ship_data.get('Sog', 0)
+    course = ship_data.get('Cog', 0)
+
+    # Find CPA to closest pier
+    closest_pier_id = analysis['closest_pier_id']
+    pier = CHESAPEAKE_BAY_BRIDGE_EASTBOUND_PIERS[closest_pier_id]
+    distance_to_pier = analysis['distance_to_pier_nm']
+
+    cpa_distance, cpa_time, will_approach = calculate_closest_point_of_approach(
+        lat, lon, speed, course,
+        pier['lat'], pier['lon']
+    )
+
+    dc_ratio = analysis['dc_ratio']
+    will_ground = analysis['will_ground']
+
+    # Check if vessel is approaching (getting closer to bridge)
+    if speed > 0.5:
+        future_lat, future_lon = predict_position(lat, lon, speed, course, 5)
+        future_distance = calculate_distance(future_lat, future_lon, pier['lat'], pier['lon'])
+        approaching = future_distance < distance_to_pier
+    else:
+        approaching = False
+
+    # Assess risk level
+
+    # NEGLIGIBLE THREAT: Grounded, small, far, or heading away
+    if will_ground:
+        risk_level = "NEGLIGIBLE THREAT"
+        risk_description = "Vessel will ground before pier"
+
+    elif not approaching and distance_to_pier > 1.0:
+        risk_level = "NEGLIGIBLE THREAT"
+        risk_description = "Vessel headed away - Routine tracking"
+
+    elif dc_ratio < 0.5:
+        risk_level = "NEGLIGIBLE THREAT"
+        risk_description = "Vessel too small - Routine tracking"
+
+    elif distance_to_pier > 10:
+        risk_level = "NEGLIGIBLE THREAT"
+        risk_description = "Vessel far from bridge - Routine tracking"
+
+    elif speed < 0.5:
+        risk_level = "NEGLIGIBLE THREAT"
+        risk_description = "Vessel stationary - Routine tracking"
+
+    # ALARM: Excessive speed + approaching
+    elif dc_ratio >= 1.0 and speed > 15 and approaching and distance_to_pier < 2:
+        risk_level = "ALARM"
+        risk_description = "Excessive speed approaching bridge - Close bridge immediately"
+
+    # ELEVATED MONITORING: Large vessel approaching (normal transit)
+    elif dc_ratio >= 0.75 and approaching and distance_to_pier < 5:
+        risk_level = "ELEVATED MONITORING"
+        risk_description = "Large vessel approaching - Routine transit expected"
+
+    # MONITOR: Large vessel in area
+    elif dc_ratio >= 0.5 and distance_to_pier < 10:
+        risk_level = "MONITOR"
+        risk_description = "Large vessel in the area - Routine tracking"
+
+    # NEGLIGIBLE THREAT: Everything else
+    else:
+        risk_level = "NEGLIGIBLE THREAT"
+        risk_description = "Vessel too small, deep drafted, far, or headed away - Routine tracking"
 
     return {
-        'total_vessels': len(analyses),
-        'critical': critical,
-        'high': high,
-        'medium': medium,
-        'low': low,
-        'approaching_count': approaching,
-        'max_impact_force': max_force
+        'risk_level': risk_level,
+        'risk_description': risk_description,
+        'cpa_distance_nm': cpa_distance,
+        'cpa_time_minutes': cpa_time,
+        'will_approach': will_approach,
+        'time_to_impact': cpa_time if approaching else None,
+        'approaching': approaching
+    }
+
+def calculate_allision_probability(ship_data, analysis, collision_risk):
+    """
+    Calculate probability of vessel allision with bridge pier
+
+    Accounts for multiple uncertainty factors:
+    - Trajectory deviation probability
+    - Grounding probability
+    - Maneuvering ability
+    - Environmental factors
+
+    Args:
+        ship_data: Vessel AIS data
+        analysis: Vessel analysis with D/C ratio
+        collision_risk: Collision assessment with CPA
+
+    Returns:
+        probability: Float 0-1 (0% to 100%)
+        confidence: String describing confidence level
+        factors: Dictionary of contributing factors
+    """
+    speed = ship_data.get('Sog', 0)
+
+    # Initialize probability factors
+    factors = {}
+
+    # Factor 1: Trajectory alignment (0-1)
+    # How directly is vessel heading toward pier?
+    cpa_distance = collision_risk['cpa_distance_nm']
+    will_approach = collision_risk['will_approach']
+
+    if not will_approach:
+        trajectory_factor = 0.0
+        factors['trajectory'] = "Vessel heading away from bridge"
+    elif cpa_distance > 0.5:
+        trajectory_factor = 0.0
+        factors['trajectory'] = f"CPA {cpa_distance:.2f} nm - safe passage"
+    elif cpa_distance > 0.3:
+        trajectory_factor = 0.2
+        factors['trajectory'] = f"CPA {cpa_distance:.2f} nm - marginal"
+    elif cpa_distance > 0.1:
+        trajectory_factor = 0.5
+        factors['trajectory'] = f"CPA {cpa_distance:.2f} nm - close approach"
+    else:
+        trajectory_factor = 0.9
+        factors['trajectory'] = f"CPA {cpa_distance:.2f} nm - collision course"
+
+    # Factor 2: Grounding probability (0-1)
+    # Will vessel ground before reaching pier?
+    ukc = analysis['ukc_ft']
+
+    if analysis['will_ground']:
+        grounding_prevents = 0.95  # High confidence vessel will ground
+        factors['grounding'] = f"UKC {ukc:.1f} ft - will likely ground"
+    elif ukc < -5:
+        grounding_prevents = 0.7  # Probable grounding
+        factors['grounding'] = f"UKC {ukc:.1f} ft - probable grounding"
+    elif ukc < 0:
+        grounding_prevents = 0.4  # Possible grounding
+        factors['grounding'] = f"UKC {ukc:.1f} ft - possible grounding"
+    elif ukc < 5:
+        grounding_prevents = 0.1  # Unlikely grounding
+        factors['grounding'] = f"UKC {ukc:.1f} ft - marginal clearance"
+    else:
+        grounding_prevents = 0.0  # No grounding expected
+        factors['grounding'] = f"UKC {ukc:.1f} ft - adequate depth"
+
+    # Factor 3: Vessel maneuvering ability (0-1)
+    # Can vessel avoid collision if needed?
+    distance_to_pier = analysis['distance_to_pier_nm']
+
+    if speed < 0.5:
+        maneuver_factor = 0.0  # Stationary vessel
+        factors['maneuverability'] = "Stationary - minimal drift risk"
+    elif speed < 5 and distance_to_pier > 1.0:
+        maneuver_factor = 0.1  # Slow speed, good distance
+        factors['maneuverability'] = "Low speed - can maneuver"
+    elif speed < 10 and distance_to_pier > 0.5:
+        maneuver_factor = 0.3  # Moderate speed, adequate distance
+        factors['maneuverability'] = "Moderate speed - should maneuver"
+    elif distance_to_pier > 0.3:
+        maneuver_factor = 0.5  # Fast but some distance
+        factors['maneuverability'] = f"{speed:.1f} kts - limited time to maneuver"
+    else:
+        maneuver_factor = 0.8  # Fast and close
+        factors['maneuverability'] = f"{speed:.1f} kts at {distance_to_pier:.2f} nm - minimal time"
+
+    # Factor 4: Impact severity if collision occurs (0-1)
+    # Based on D/C ratio
+    dc_ratio = analysis['dc_ratio']
+
+    if dc_ratio < 0.5:
+        severity_factor = 0.3  # Minor damage likely
+        factors['severity'] = f"D/C={dc_ratio:.2f} - minor damage if impact"
+    elif dc_ratio < 0.75:
+        severity_factor = 0.5  # Moderate damage likely
+        factors['severity'] = f"D/C={dc_ratio:.2f} - moderate damage if impact"
+    elif dc_ratio < 1.0:
+        severity_factor = 0.7  # Significant damage likely
+        factors['severity'] = f"D/C={dc_ratio:.2f} - significant damage if impact"
+    else:
+        severity_factor = 1.0  # Pier failure likely
+        factors['severity'] = f"D/C={dc_ratio:.2f} - pier failure if impact"
+
+    # Calculate combined probability
+    # P(allision) = P(on trajectory) × P(doesn't ground) × P(fails to maneuver) × Severity
+
+    base_probability = trajectory_factor * (1 - grounding_prevents) * maneuver_factor
+
+    # Weight by severity for risk prioritization
+    risk_weighted_probability = base_probability * severity_factor
+
+    # Determine confidence level
+    if trajectory_factor == 0 or grounding_prevents > 0.9:
+        confidence = "HIGH"
+        confidence_desc = "High confidence in assessment"
+    elif ukc < 5 or distance_to_pier < 0.5:
+        confidence = "MODERATE"
+        confidence_desc = "Moderate confidence - uncertainties present"
+    else:
+        confidence = "LOW"
+        confidence_desc = "Low confidence - multiple uncertainties"
+
+    # Categorize probability
+    if risk_weighted_probability < 0.05:
+        probability_category = "NEGLIGIBLE"
+        category_emoji = "🟢"
+    elif risk_weighted_probability < 0.15:
+        probability_category = "LOW"
+        category_emoji = "🟡"
+    elif risk_weighted_probability < 0.35:
+        probability_category = "MODERATE"
+        category_emoji = "🟠"
+    else:
+        probability_category = "HIGH"
+        category_emoji = "🔴"
+
+    return {
+        'probability': risk_weighted_probability,
+        'probability_percent': risk_weighted_probability * 100,
+        'probability_category': probability_category,
+        'category_emoji': category_emoji,
+        'confidence': confidence,
+        'confidence_description': confidence_desc,
+        'factors': factors,
+        'base_probability': base_probability,
+        'severity_factor': severity_factor
     }
